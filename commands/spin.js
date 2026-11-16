@@ -235,7 +235,7 @@ if (subcommand === 'reactions' && giveawayMessageId) {
   entries = reactionEntries.map(user => user.name);
     }   
   // Validate entries
-    if (entries.length < 2) {
+    if (entries.length < 1) {
       await interaction.editReply({
         content: 'Need at least 2 entries to spin the wheel!'
       });
