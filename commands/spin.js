@@ -185,7 +185,7 @@ export async function execute(interaction, uplupAPI) {
           });
           return;
         }
-        }
+        
         break;
       }
 
