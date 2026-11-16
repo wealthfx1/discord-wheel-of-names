@@ -174,7 +174,7 @@ giveawayMessageId = messageId;
             const reactionUsers = await reaction.users.fetch();
             reactionUsers.forEach(user => {
               if (!user.bot) {
-                users.add(user.displayName || user.username);
+                users.set(user.id, user.displayName || user.username);
               }
             });
           }
