@@ -251,7 +251,7 @@ if (subcommand === 'reactions' && giveawayMessageId) {
     // Pick a random winner
     const winnerIndex = Math.floor(Math.random() * entries.length);
     const winner = entries[winnerIndex];
-
+const winnerUserId = subcommand === 'reactions' ? reactionEntries[winnerIndex]?.id : null;
     // Generate the wheel GIF
     const gifBuffer = await generateWheelGIF(entries, {
       winner,
