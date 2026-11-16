@@ -165,7 +165,8 @@ let giveawayMessageId = null;
         try {
           const message = await interaction.channel.messages.fetch(messageId);
           const reactions = message.reactions.cache;
-          const users = new Set();
+          const users = new Map();
+giveawayMessageId = messageId;
 
           for (const [reactionEmoji, reaction] of reactions) {
             if (emojiFilter && reactionEmoji !== emojiFilter) continue;
