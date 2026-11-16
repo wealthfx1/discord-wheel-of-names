@@ -215,8 +215,26 @@ entries = reactionEntries.map(user => user.name);
         break;
       }
     }
+ // Exclude previous winners from this giveaway
+if (subcommand === 'reactions' && giveawayMessageId) {
+  const previousSpins = await interaction.channel.messages.fetch({ limit: 100 });
+  const previousWinnerIds = new Set();
 
-    // Validate entries
+  for (const msg of previousSpins.values()) {
+    if (msg.author.id !== interaction.client.user.id) continue;
+
+    for (const field of msg.embeds[0]?.fields || []) {
+      if (field.name === 'Giveaway Message' && field.value === giveawayMessageId) {
+        const winnerField = msg.embeds[0].fields.find(f => f.name === 'Winner ID');
+        if (winnerField) previousWinnerIds.add(winnerField.value);
+      }
+    }
+  }
+
+  reactionEntries = reactionEntries.filter(user => !previousWinnerIds.has(user.id));
+  entries = reactionEntries.map(user => user.name);
+                                }   
+  // Validate entries
     if (entries.length < 2) {
       await interaction.editReply({
         content: 'Need at least 2 entries to spin the wheel!'
