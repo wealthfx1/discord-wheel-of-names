@@ -120,6 +120,8 @@ export async function execute(interaction, uplupAPI) {
   const subcommand = interaction.options.getSubcommand();
   const colorPalette = interaction.options.getString('color') || 'uplup';
   let entries = [];
+  let reactionEntries = [];
+let giveawayMessageId = null;
   let wheelName = '';
 
   try {
