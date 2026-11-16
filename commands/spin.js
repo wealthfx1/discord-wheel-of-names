@@ -237,7 +237,7 @@ if (subcommand === 'reactions' && giveawayMessageId) {
   // Validate entries
     if (entries.length < 1) {
       await interaction.editReply({
-        content: 'Need at least 2 entries to spin the wheel!'
+        content: 'Everyone has already won this giveaway!'
       });
       return;
     }
@@ -271,10 +271,14 @@ const winnerUserId = subcommand === 'reactions' ? reactionEntries[winnerIndex]?.
       .setTitle(wheelName)
       .setImage('attachment://wheel-spin.gif')
       .addFields(
-        { name: 'Winner', value: `**${winner}**`, inline: true },
-        { name: 'Entries', value: `${entries.length}`, inline: true },
-        { name: 'Spun at', value: `<t:${spinTimestamp}:f>`, inline: true }
-      )
+  { name: 'Winner', value: `**${winner}**`, inline: true },
+  { name: 'Entries', value: `${entries.length}`, inline: true },
+  { name: 'Spun at', value: `<t:${spinTimestamp}:f>`, inline: true },
+  ...(subcommand === 'reactions' ? [
+    { name: 'Giveaway Message', value: giveawayMessageId },
+    { name: 'Winner ID', value: winnerUserId }
+  ] : [])
+)
       .setFooter({
         text: 'Powered by Uplup',
         iconURL: 'https://uplup.com/favicon.ico'
