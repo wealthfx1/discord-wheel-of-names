@@ -179,7 +179,8 @@ giveawayMessageId = messageId;
             });
           }
 
-          entries = Array.from(users);
+          reactionEntries = Array.from(users, ([id, name]) => ({ id, name }));
+entries = reactionEntries.map(user => user.name);
           wheelName = 'Reaction Giveaway';
                 } catch (error) {
           console.error('Message fetch failed:', error);
