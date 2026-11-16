@@ -233,7 +233,7 @@ if (subcommand === 'reactions' && giveawayMessageId) {
 
   reactionEntries = reactionEntries.filter(user => !previousWinnerIds.has(user.id));
   entries = reactionEntries.map(user => user.name);
-                                }   
+    }   
   // Validate entries
     if (entries.length < 2) {
       await interaction.editReply({
