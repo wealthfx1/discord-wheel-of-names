@@ -178,11 +178,13 @@ export async function execute(interaction, uplupAPI) {
 
           entries = Array.from(users);
           wheelName = 'Reaction Giveaway';
-        } catch (error) {
+                } catch (error) {
+          console.error('Message fetch failed:', error);
           await interaction.editReply({
-            content: 'Could not find that message. Make sure the message ID is correct and the message is in this channel.'
+            content: `Message fetch failed: ${error.message}`
           });
           return;
+        }
         }
         break;
       }
