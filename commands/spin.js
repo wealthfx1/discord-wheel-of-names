@@ -1,5 +1,27 @@
 import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
 import { generateWheelGIF, generateWheelImage, COLOR_PALETTES } from '../wheel-generator.js';
+import pg from 'pg';
+
+const { Pool } = pg;
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+});
+
+const initDatabase = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS giveaway_winners (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      giveaway_message_id TEXT NOT NULL,
+      winner_user_id TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+};
+
 
 export const data = new SlashCommandBuilder()
   .setName('spin')
@@ -87,6 +109,35 @@ export const data = new SlashCommandBuilder()
             { name: 'Ocean', value: 'ocean' }
           )
       )
+  )  .addSubcommand(subcommand =>
+    subcommand
+      .setName('respin')
+      .setDescription('Spin the giveaway again')
+      .addStringOption(option =>
+        option
+          .setName('message_id')
+          .setDescription('The original giveaway message ID')
+          .setRequired(true)
+      )
+      .addStringOption(option =>
+        option
+          .setName('emoji')
+          .setDescription('Only count this emoji')
+          .setRequired(false)
+      )
+      .addStringOption(option =>
+        option
+          .setName('color')
+          .setDescription('Color theme for the wheel')
+          .setRequired(false)
+          .addChoices(
+            { name: 'Uplup (Purple/Pink)', value: 'uplup' },
+            { name: 'Vibrant', value: 'vibrant' },
+            { name: 'Pastel', value: 'pastel' },
+            { name: 'Sunset', value: 'sunset' },
+            { name: 'Ocean', value: 'ocean' }
+          )
+      )
   )
   .addSubcommand(subcommand =>
     subcommand
@@ -114,17 +165,18 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction, uplupAPI) {
-  // Defer reply - generating GIF takes time
   await interaction.deferReply();
 
   const subcommand = interaction.options.getSubcommand();
   const colorPalette = interaction.options.getString('color') || 'uplup';
   let entries = [];
   let reactionEntries = [];
-let giveawayMessageId = null;
+  let giveawayMessageId = null;
   let wheelName = '';
 
   try {
+    await initDatabase();
+
     switch (subcommand) {
       case 'members': {
         const role = interaction.options.getRole('role');
@@ -158,10 +210,10 @@ let giveawayMessageId = null;
         break;
       }
 
-      case 'reactions': {
-        const messageId = interaction.options.getString('message_id');
-        const emojiFilter = interaction.options.getString('emoji');
-
+case 'reactions':
+case 'respin': {
+  const messageId = interaction.options.getString('message_id');
+  const emojiFilter = interaction.options.getString('emoji');
         try {
           const message = await interaction.channel.messages.fetch(messageId);
           const reactions = message.reactions.cache;
@@ -216,24 +268,30 @@ entries = reactionEntries.map(user => user.name);
       }
     }
  // Exclude previous winners from this giveaway
-if (subcommand === 'reactions' && giveawayMessageId) {
-  const previousSpins = await interaction.channel.messages.fetch({ limit: 100 });
-  const previousWinnerIds = new Set();
+if ((subcommand === 'reactions' || subcommand === 'respin') && giveawayMessageId) {
+  const previousWinners = await pool.query(
+    `SELECT winner_user_id
+     FROM giveaway_winners
+     WHERE guild_id = $1
+     AND channel_id = $2
+     AND giveaway_message_id = $3`,
+    [
+      interaction.guildId,
+      interaction.channelId,
+      giveawayMessageId
+    ]
+  );
 
-  for (const msg of previousSpins.values()) {
-    if (msg.author.id !== interaction.client.user.id) continue;
+  const previousWinnerIds = new Set(
+    previousWinners.rows.map(row => row.winner_user_id)
+  );
 
-    for (const field of msg.embeds[0]?.fields || []) {
-      if (field.name === 'Giveaway Message' && field.value === giveawayMessageId) {
-        const winnerField = msg.embeds[0].fields.find(f => f.name === 'Winner ID');
-        if (winnerField) previousWinnerIds.add(winnerField.value);
-      }
-    }
-  }
+  reactionEntries = reactionEntries.filter(
+    user => !previousWinnerIds.has(user.id)
+  );
 
-  reactionEntries = reactionEntries.filter(user => !previousWinnerIds.has(user.id));
   entries = reactionEntries.map(user => user.name);
-    }   
+}
   // Validate entries
     if (entries.length < 1) {
       await interaction.editReply({
@@ -251,7 +309,7 @@ if (subcommand === 'reactions' && giveawayMessageId) {
     // Pick a random winner
     const winnerIndex = Math.floor(Math.random() * entries.length);
     const winner = entries[winnerIndex];
-const winnerUserId = subcommand === 'reactions' ? reactionEntries[winnerIndex]?.id : null;
+const winnerUserId = (subcommand === 'reactions' || subcommand === 'respin') ? reactionEntries[winnerIndex]?.id : null;
     // Generate the wheel GIF
     const gifBuffer = await generateWheelGIF(entries, {
       winner,
@@ -292,7 +350,23 @@ const winnerUserId = subcommand === 'reactions' ? reactionEntries[winnerIndex]?.
       embeds: [embed],
       files: [attachment]
     });
-
+if (winnerUserId && giveawayMessageId) {
+  try {
+    await pool.query(
+      `INSERT INTO giveaway_winners
+       (guild_id, channel_id, giveaway_message_id, winner_user_id)
+       VALUES ($1, $2, $3, $4)`,
+      [
+        interaction.guildId,
+        interaction.channelId,
+        giveawayMessageId,
+        winnerUserId
+      ]
+    );
+  } catch (dbError) {
+    console.error('Failed to save giveaway winner:', dbError);
+  }
+}
   } catch (error) {
     console.error('Spin command error:', error);
     await interaction.editReply({
