@@ -271,8 +271,7 @@ const winnerUserId = subcommand === 'reactions' ? reactionEntries[winnerIndex]?.
   .setTitle('🏆 WE HAVE A WINNER!')
   .setDescription(`🎉 **${winner}**`)
   .setImage('attachment://wheel-spin.gif');
-)
-      
+ 
 
     // Log to Uplup API if available (creates a temporary wheel for tracking)
     if (uplupAPI) {
