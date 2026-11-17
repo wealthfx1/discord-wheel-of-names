@@ -267,22 +267,12 @@ const winnerUserId = subcommand === 'reactions' ? reactionEntries[winnerIndex]?.
     // Create embed with Discord timestamp (shows viewer's local timezone on hover)
     const spinTimestamp = Math.floor(Date.now() / 1000);
     const embed = new EmbedBuilder()
-      .setColor(0x6C60D7)
-      .setTitle(wheelName)
-      .setImage('attachment://wheel-spin.gif')
-      .addFields(
-  { name: 'Winner', value: `**${winner}**`, inline: true },
-  { name: 'Entries', value: `${entries.length}`, inline: true },
-  { name: 'Spun at', value: `<t:${spinTimestamp}:f>`, inline: true },
-  ...(subcommand === 'reactions' ? [
-    { name: 'Giveaway Message', value: giveawayMessageId },
-    { name: 'Winner ID', value: winnerUserId }
-  ] : [])
+  .setColor(0x6C60D7)
+  .setTitle('🏆 WE HAVE A WINNER!')
+  .setDescription(`🎉 **${winner}**`)
+  .setImage('attachment://wheel-spin.gif');
 )
-      .setFooter({
-        text: 'Powered by Uplup',
-        iconURL: 'https://uplup.com/favicon.ico'
-      });
+      
 
     // Log to Uplup API if available (creates a temporary wheel for tracking)
     if (uplupAPI) {
