@@ -15,7 +15,8 @@
     "@napi-rs/canvas-linux-x64-gnu": "0.1.84",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
-    "gif-encoder-2": "^1.0.5"
+    "gif-encoder-2": "^1.0.5",
+    "pg": "^8.23.1"
   },
   "engines": {
     "node": ">=18.0.0"
